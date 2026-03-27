@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão Financeira com Datas</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+header { background: #4CAF50; color: white; padding: 15px; text-align: center; }
+.container { padding: 20px; max-width: 1000px; margin: auto; }
+.card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+input, select, button { padding: 10px; margin: 5px 0; width: 100%; }
+button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+button:hover { background: #45a049; }
+ul { list-style: none; padding: 0; }
+li { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+.income { color: green; }
+.expense { color: red; }
+small { color: #555; display:block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📅 Gestão Financeira com Datas</h1>
+</header>
+<div class="container">
+
+  <div class="card">
+    <h3>Adicionar Transação</h3>
+    <input type="text" id="desc" placeholder="Descrição">
+    <input type="number" id="amount" placeholder="Valor">
+    <input type="date" id="date">
+    <select id="type">
+      <option value="income">Receita</option>
+      <option value="expense">Despesa</option>
+    </select>
+    <button onclick="addTransaction()">Adicionar</button>
+  </div>
+
+  <div class="card">
+    <h3>Resumo Geral</h3>
+    <p>Saldo Atual: R$ <span id="balance">0.00</span></p>
+  </div>
+
+  <div class="card">
+    <h3>Simular por Data</h3>
+    <input type="date" id="filterDate" onchange="calculateByDate()">
+    <p>Saldo até a data: R$ <span id="dateBalance">0.00</span></p>
+  </div>
+
+  <div class="card">
+    <h3>Transações</h3>
+    <ul id="list"></ul>
+  </div>
+
+</div>
+
+<!-- Eduarda -->
+<script>
+let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+function save() {
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+}
+
+function addTransaction() {
+  const desc = document.getElementById('desc').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const type = document.getElementById('type').value;
+  const date = document.getElementById('date').value;
+
+  if (!desc || isNaN(amount) || !date) {
+    alert('Preencha todos os campos!');
+    return;
+  }
+
+  const transaction = {
+    id: Date.now(),
+    desc,
+    amount,
+    type,
+    date
+  };
+
+  transactions.push(transaction);
+  transactions.sort((a,b)=> new Date(a.date) - new Date(b.date));
+  save();
+  updateUI();
+}
+
+function deleteTransaction(id) {
+  transactions = transactions.filter(t => t.id !== id);
+  save();
+  updateUI();
+}
+
+function updateUI() {
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+
+  let balance = 0;
+
+  transactions.forEach(t => {
+    if (t.type === 'income') balance += t.amount;
+    else balance -= t.amount;
+
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div>
+        <strong>${t.desc}</strong>
+        <small>${t.date}</small>
+      </div>
+      <div>
+        R$ ${t.amount.toFixed(2)}
+        <button onclick="deleteTransaction(${t.id})">X</button>
+      </div>
+    `;
+
+    li.classList.add(t.type);
+    list.appendChild(li);
+  });
+
+  document.getElementById('balance').innerText = balance.toFixed(2);
+}
+
+function calculateByDate() {
+  const selectedDate = document.getElementById('filterDate').value;
+  if (!selectedDate) return;
+
+  let balance = 0;
+
+  transactions.forEach(t => {
+    if (t.date <= selectedDate) {
+      if (t.type === 'income') balance += t.amount;
+      else balance -= t.amount;
+    }
+  });
+
+  document.getElementById('dateBalance').innerText = balance.toFixed(2);
+}
+
+updateUI();
+</script>
+</body>
+</html>
